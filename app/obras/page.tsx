@@ -1,11 +1,9 @@
-import { PaginaPlaceholder } from "@/components/pagina-placeholder";
+import { listarObras } from "@/lib/acciones/obras";
+import { ObrasClient } from "@/components/obras/obras-client";
 
-export default function Obras() {
-  return (
-    <PaginaPlaceholder
-      titulo="Obras y presupuesto"
-      fase={3}
-      descripcion="Acá vas a dar de alta obras, elegir su fecha base de precios, y cargar el presupuesto tipo planilla: elegís rubro e ítem, cargás la cantidad, y todo lo demás se calcula solo."
-    />
-  );
+export const dynamic = "force-dynamic";
+
+export default async function Obras() {
+  const obras = await listarObras();
+  return <ObrasClient obrasIniciales={obras} />;
 }

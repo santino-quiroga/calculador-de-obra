@@ -29,7 +29,7 @@ cp datos/obra.db datos/backups/obra-2026-08-30.db
 Ese archivo nunca se sube a git (está en `.gitignore`) — es tuyo y vive solo en
 tu computadora.
 
-## Qué se puede hacer hoy (Fase 2)
+## Qué se puede hacer hoy (Fase 3)
 
 **Bases maestras** (Fase 1) funciona completo:
 
@@ -55,6 +55,20 @@ tu computadora.
   venta final.
 - Si un insumo no tiene precio vigente a la fecha elegida, esa línea se
   marca con error en vez de mostrar un número inventado.
+
+**Obras y presupuesto** (Fase 3) también funciona completo:
+
+- Alta de obras con fecha base de precios, tipo de licitación, anticipo y
+  fondo de reparo.
+- Presupuesto tipo planilla: elegís rubro y después ítem del catálogo,
+  cargás solo la cantidad — número de ítem jerárquico, unidad, precio
+  unitario, precio total, subtotal por rubro e incidencia se calculan
+  solos, reutilizando el motor de cálculo de la Fase 2.
+- Reordenar ítems del mismo rubro arrastrando.
+- Abrir la APU completa de cualquier ítem del presupuesto desde la grilla.
+- Cambiar la fecha base de precios de la obra recalcula todo el
+  presupuesto en el acto.
+- El estado "Presentado" todavía no congela los precios — eso es la Fase 5.
 
 Para probarlo sin cargar todo a mano:
 

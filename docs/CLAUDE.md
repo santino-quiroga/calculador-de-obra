@@ -347,8 +347,34 @@ Se desarrolla **una fase por sesión**. No empezar la siguiente sin aprobación 
 
 > Claude Code actualiza esta sección al terminar cada fase.
 
-- **Fase actual:** 3 — sin arrancar
-- **Fases cerradas:** 0 (esqueleto), 1 (bases maestras), 2 (catálogo y motor de cálculo)
+- **Fase actual:** 4 — sin arrancar
+- **Fases cerradas:** 0 (esqueleto), 1 (bases maestras), 2 (catálogo y motor de cálculo), 3 (obras y presupuesto)
+- **Qué quedó funcionando en la Fase 3:**
+  - Alta y edición de obras (`lib/acciones/obras.ts`): fecha base de precios,
+    tipo de licitación, anticipo, fondo de reparo, estado.
+  - Presupuesto tipo planilla (`/obras/[id]`, `lib/acciones/presupuesto.ts`):
+    rubro → ítem del catálogo (listas dependientes) → cantidad; todo lo demás
+    se calcula. El precio unitario es el precio de venta que sale del motor
+    de la Fase 2 (`calcularApuDeItem`), a la fecha base de la obra — no hay
+    fórmula de costeo nueva acá, solo orquestación.
+  - Numeración jerárquica ("1", "1.1", "1.2") y subtotales/incidencias en
+    `lib/calculo/presupuesto.ts` (funciones puras, con tests), recalculadas
+    solas después de cada alta, baja o reordenamiento.
+  - Reordenar ítems dentro de un mismo rubro arrastrando (drag and drop
+    nativo de HTML5, sin librería nueva). Verificado que la lógica de
+    reordenamiento y numeración anda por sus tests; el gesto de arrastrar en
+    sí es difícil de probar con automatización de navegador (los eventos de
+    drag nativos no se simulan bien con clicks sintéticos) — pendiente de que
+    el usuario lo pruebe a mano.
+  - Panel de APU reutilizado tal cual de la Fase 2 (`ApuDesglose`) para ver
+    el desglose completo de cualquier ítem del presupuesto.
+  - Cambiar la fecha base de precios de la obra recalcula todo en vivo —
+    verificado a mano: al mover la fecha base más allá de un precio nuevo
+    cargado en Bases maestras, el presupuesto entero se actualizó solo.
+  - El estado "Presentado" todavía no congela nada (eso es la Fase 5); la
+    pantalla lo aclara.
+  - Obra de ejemplo dejada en la base ("Casa de prueba") con la mampostería
+    cargada, para que la explores — borrable, no es dato real.
 - **Qué quedó funcionando en la Fase 2:**
   - ABM del catálogo de ítems (`lib/acciones/catalogo.ts`) con su receta de
     materiales, mano de obra y equipos (`componente_apu` se edita y se borra de
@@ -406,4 +432,8 @@ Se desarrolla **una fase por sesión**. No empezar la siguiente sin aprobación 
     no se auditó contra la planilla real del usuario. Cuando lo compare,
     ajustar `lib/calculo/cargas-sociales.ts` si el criterio de su convenio
     difiere.
-- **Deuda técnica conocida:** ninguna
+- **Deuda técnica conocida:**
+  - El arrastrar para reordenar ítems del presupuesto (Fase 3) no se probó
+    visualmente de punta a punta — la lógica de reordenamiento y numeración
+    tiene tests, pero el gesto de arrastrar en el navegador todavía no lo
+    confirmó un humano. Probarlo en la próxima sesión de uso.
