@@ -1,11 +1,16 @@
-import { PaginaPlaceholder } from "@/components/pagina-placeholder";
+import { listarItemsCatalogo } from "@/lib/acciones/catalogo";
+import { listarInsumos } from "@/lib/acciones/insumos";
+import { listarRubros } from "@/lib/acciones/rubros";
+import { CatalogoClient } from "@/components/catalogo/catalogo-client";
 
-export default function Catalogo() {
-  return (
-    <PaginaPlaceholder
-      titulo="Catálogo de ítems"
-      fase={2}
-      descripcion="Acá vas a ver el catálogo de ítems tipo (las recetas de APU reutilizables entre obras) y el motor de cálculo que resuelve el costo unitario contra la lista de precios vigente."
-    />
-  );
+export const dynamic = "force-dynamic";
+
+export default async function Catalogo() {
+  const [items, rubros, insumos] = await Promise.all([
+    listarItemsCatalogo(),
+    listarRubros(),
+    listarInsumos(),
+  ]);
+
+  return <CatalogoClient itemsIniciales={items} rubros={rubros} insumos={insumos} />;
 }

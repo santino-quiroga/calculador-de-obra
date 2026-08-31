@@ -347,8 +347,28 @@ Se desarrolla **una fase por sesión**. No empezar la siguiente sin aprobación 
 
 > Claude Code actualiza esta sección al terminar cada fase.
 
-- **Fase actual:** 2 — en curso
-- **Fases cerradas:** 0 (esqueleto), 1 (bases maestras)
+- **Fase actual:** 3 — sin arrancar
+- **Fases cerradas:** 0 (esqueleto), 1 (bases maestras), 2 (catálogo y motor de cálculo)
+- **Qué quedó funcionando en la Fase 2:**
+  - ABM del catálogo de ítems (`lib/acciones/catalogo.ts`) con su receta de
+    materiales, mano de obra y equipos (`componente_apu` se edita y se borra de
+    verdad — no es un ledger, a diferencia del historial de precios).
+  - Motor de cálculo puro en `lib/calculo/` (con 19 tests entre las 4 fórmulas):
+    `cargas-sociales.ts` (cascada del factor, con la regla acordada: cada
+    concepto se aplica sobre el acumulado, salvo `salario_basico` que siempre
+    parte del básico original), `apu.ts` (costo unitario directo, marca con
+    error la línea de un insumo sin precio vigente en vez de calcular mal) y
+    `coeficiente-resumen.ts` (cascada de gastos generales → beneficio →
+    financieros/seguros → impuestos sumados directo → precio final).
+  - Pantalla de APU (`/catalogo`) con selector de fecha de cálculo y el
+    desglose completo visible paso a paso, tal como pide CLAUDE.md 4.4.
+  - Ítem de catálogo de ejemplo en el seed: mampostería de ladrillo hueco
+    12 cm, con receta completa — usalo para verificar el motor contra tu
+    propia planilla.
+  - **Corrección sobre el prompt guardado de la Fase 2:** el prompt decía que
+    los impuestos "se despejan dividiendo"; eso quedó desactualizado — la
+    decisión vigente (sección 6.2, confirmada en Fase 0) es que se suman
+    directo. Se implementó así.
 - **Qué quedó funcionando en la Fase 1:**
   - ABM de insumos (materiales, mano de obra, equipos) con historial de precios:
     actualizar un precio siempre inserta una fila nueva, nunca pisa la anterior.
@@ -362,6 +382,13 @@ Se desarrolla **una fase por sesión**. No empezar la siguiente sin aprobación 
   - Función pura `obtenerPrecioVigente` en `lib/calculo/precios.ts` (con tests),
     que la Fase 2 reutiliza para resolver precios contra la fecha base de la obra.
   - Datos de ejemplo en `seed/` (10 rubros, 25 insumos típicos de obra argentina).
+- **Decisión tomada en la Fase 2:** la cascada del factor de cargas sociales
+  (sección 6.1) no tenía un algoritmo cerrado para las 4 bases. Se definió:
+  cada concepto se aplica sobre el total acumulado hasta el paso anterior, en
+  el orden dado, salvo los conceptos con base `salario_basico`, que siempre
+  se calculan sobre el sueldo básico original. El usuario pidió usar este
+  criterio estándar y auditarlo después contra su planilla real — todavía no
+  está confirmado contra un caso real.
 - **Decisiones tomadas en el arranque (Fase 0):**
   - Impuestos sobre facturación (IIBB, sellado): se suman directo, no se despejan
     dividiendo (sección 6.2).
@@ -374,5 +401,9 @@ Se desarrolla **una fase por sesión**. No empezar la siguiente sin aprobación 
   - Licitaciones: el usuario trabaja con públicas y privadas (`obra.tipo_licitacion`).
   - Combustibles y lubricantes: incluidos en el costo horario del equipo, sin línea
     separada.
-- **Decisiones abiertas:** ninguna
+- **Decisiones abiertas:**
+  - El factor de cargas sociales (cascada simple, ver Fase 2 arriba) todavía
+    no se auditó contra la planilla real del usuario. Cuando lo compare,
+    ajustar `lib/calculo/cargas-sociales.ts` si el criterio de su convenio
+    difiere.
 - **Deuda técnica conocida:** ninguna

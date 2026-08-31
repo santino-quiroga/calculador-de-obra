@@ -64,6 +64,24 @@ export const parametrosEmpresaSeed = {
   segurosPct: 1.5,
 };
 
+// Ítem de catálogo de ejemplo, con receta completa, para poder verificar el
+// motor de cálculo de la Fase 2 contra una planilla real (mampostería de
+// ladrillo hueco 12 cm por m², un clásico de obra de vivienda).
+export const itemCatalogoEjemploSeed = {
+  codigo: "4.01",
+  rubroCodigo: "4",
+  descripcion: "Mampostería de ladrillo hueco 12 cm",
+  unidad: "m2" as const,
+  componentes: [
+    { tipo: "material" as const, insumoCodigo: "MAT-006", cantidadUnitaria: 12.5, desperdicioPct: 5 },
+    { tipo: "material" as const, insumoCodigo: "MAT-001", cantidadUnitaria: 0.15, desperdicioPct: 5 },
+    { tipo: "material" as const, insumoCodigo: "MAT-002", cantidadUnitaria: 0.08, desperdicioPct: 5 },
+    { tipo: "material" as const, insumoCodigo: "MAT-003", cantidadUnitaria: 0.03, desperdicioPct: 10 },
+    { tipo: "mano_obra" as const, insumoCodigo: "MO-002", rendimientoHoras: 0.5 },
+    { tipo: "mano_obra" as const, insumoCodigo: "MO-004", rendimientoHoras: 0.5 },
+  ],
+};
+
 // Desglose ilustrativo — reemplazalo por el de tu convenio antes de cotizar.
 export const conceptosCargaSocialSeed = [
   {
