@@ -361,11 +361,8 @@ Se desarrolla **una fase por sesión**. No empezar la siguiente sin aprobación 
     `lib/calculo/presupuesto.ts` (funciones puras, con tests), recalculadas
     solas después de cada alta, baja o reordenamiento.
   - Reordenar ítems dentro de un mismo rubro arrastrando (drag and drop
-    nativo de HTML5, sin librería nueva). Verificado que la lógica de
-    reordenamiento y numeración anda por sus tests; el gesto de arrastrar en
-    sí es difícil de probar con automatización de navegador (los eventos de
-    drag nativos no se simulan bien con clicks sintéticos) — pendiente de que
-    el usuario lo pruebe a mano.
+    nativo de HTML5, sin librería nueva). Probado a mano por el usuario:
+    confirmado que funciona bien.
   - Panel de APU reutilizado tal cual de la Fase 2 (`ApuDesglose`) para ver
     el desglose completo de cualquier ítem del presupuesto.
   - Cambiar la fecha base de precios de la obra recalcula todo en vivo —
@@ -432,8 +429,4 @@ Se desarrolla **una fase por sesión**. No empezar la siguiente sin aprobación 
     no se auditó contra la planilla real del usuario. Cuando lo compare,
     ajustar `lib/calculo/cargas-sociales.ts` si el criterio de su convenio
     difiere.
-- **Deuda técnica conocida:**
-  - El arrastrar para reordenar ítems del presupuesto (Fase 3) no se probó
-    visualmente de punta a punta — la lógica de reordenamiento y numeración
-    tiene tests, pero el gesto de arrastrar en el navegador todavía no lo
-    confirmó un humano. Probarlo en la próxima sesión de uso.
+- **Deuda técnica conocida:** ninguna
