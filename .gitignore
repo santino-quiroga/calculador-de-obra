@@ -5,6 +5,8 @@ out/
 # Datos del usuario: nunca se versionan
 datos/*.db
 datos/*.db-journal
+datos/*.db-shm
+datos/*.db-wal
 datos/backups/*
 
 # Mantener las carpetas en git aunque estén vacías

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { NavSidebar } from "@/components/nav-sidebar";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Programa de obra",
@@ -13,6 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="flex min-h-screen bg-white text-neutral-900 antialiased">
         <NavSidebar />
         <main className="flex-1 p-8">{children}</main>
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );

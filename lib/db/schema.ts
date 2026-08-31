@@ -35,6 +35,7 @@ export const rubro = sqliteTable("rubro", {
   codigo: text("codigo").notNull().unique(),
   nombre: text("nombre").notNull(),
   orden: integer("orden").notNull().default(0),
+  activo: integer("activo", { mode: "boolean" }).notNull().default(true),
 });
 
 // El "subrubro" / tarea tipo. La receta maestra reutilizable entre obras.
