@@ -347,8 +347,35 @@ Se desarrolla **una fase por sesión**. No empezar la siguiente sin aprobación 
 
 > Claude Code actualiza esta sección al terminar cada fase.
 
-- **Fase actual:** 4 — sin arrancar
-- **Fases cerradas:** 0 (esqueleto), 1 (bases maestras), 2 (catálogo y motor de cálculo), 3 (obras y presupuesto)
+- **Fase actual:** 5 — sin arrancar
+- **Fases cerradas:** 0 (esqueleto), 1 (bases maestras), 2 (catálogo y motor
+  de cálculo), 3 (obras y presupuesto), 4 (resumen de empresa)
+- **Qué quedó funcionando en la Fase 4:**
+  - Hoja de resumen de empresa (`/resumen-empresa`,
+    `lib/acciones/resumen-empresa.ts`) que consolida el presupuesto de una
+    obra elegida: costo directo, aporte de cargas sociales (desagregado
+    dividiendo el costo de mano de obra por el factor), y totales de
+    materiales/mano de obra/equipos con incidencia % y gráfico de torta
+    (Recharts, recién instalado).
+  - Cascada del coeficiente resumen desagregada en 7 líneas (gastos
+    generales, beneficio, seguros, gastos financieros, IVA, IIBB, sellado)
+    en `lib/calculo/resumen-empresa.ts` — son los mismos subtotales que ya
+    calculaba `calcularCoeficienteResumen` (Fase 2), solo más desglosados
+    para mostrar, sin fórmulas nuevas.
+  - Edición de porcentajes en vivo, 100% en el navegador: las funciones de
+    `lib/calculo/` son puras, así que tantear un escenario no pega al
+    servidor ni guarda nada hasta que el usuario aprieta "Guardar como
+    parámetros de empresa" (reutiliza `guardarParametrosEmpresa`, Fase 1).
+  - Modo "objetivo de precio" (`resolverBeneficioParaPrecioObjetivo`):
+    despeja el % de beneficio necesario para un precio final dado. Probado
+    a mano: con costo directo $625.831,95 y precio objetivo $1.200.000,
+    devolvió 28,36% de beneficio, y al recalcular con ese valor el precio
+    final dio exactamente $1.200.000,00.
+  - Verificado a mano que el precio final agregado de esta pantalla
+    coincide centavo a centavo con la suma de los precios unitarios del
+    presupuesto de la Fase 3 (ambos dan $1.047.026,49 con los parámetros
+    por defecto) — confirma que agregar antes o después de aplicar la
+    cascada da lo mismo, como corresponde matemáticamente.
 - **Qué quedó funcionando en la Fase 3:**
   - Alta y edición de obras (`lib/acciones/obras.ts`): fecha base de precios,
     tipo de licitación, anticipo, fondo de reparo, estado.

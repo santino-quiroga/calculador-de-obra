@@ -29,7 +29,7 @@ cp datos/obra.db datos/backups/obra-2026-08-30.db
 Ese archivo nunca se sube a git (está en `.gitignore`) — es tuyo y vive solo en
 tu computadora.
 
-## Qué se puede hacer hoy (Fase 3)
+## Qué se puede hacer hoy (Fase 4)
 
 **Bases maestras** (Fase 1) funciona completo:
 
@@ -69,6 +69,21 @@ tu computadora.
 - Cambiar la fecha base de precios de la obra recalcula todo el
   presupuesto en el acto.
 - El estado "Presentado" todavía no congela los precios — eso es la Fase 5.
+
+**Resumen de empresa** (Fase 4) también funciona completo:
+
+- Elegís una obra y ves su presupuesto consolidado: costo directo, aporte
+  por cargas sociales, y los totales de materiales/mano de obra/equipos
+  con su incidencia porcentual (con gráfico de torta).
+- La cascada del coeficiente resumen, desagregada paso por paso (gastos
+  generales, beneficio, seguros, gastos financieros, IVA, IIBB, sellado),
+  hasta el precio final.
+- Los porcentajes son editables y recalculan en vivo, en el navegador, sin
+  guardar nada — para tantear escenarios.
+- Modo "objetivo de precio": ingresás el precio al que querés llegar y el
+  sistema te dice qué % de beneficio te queda.
+- Botón para guardar un escenario como los parámetros de empresa reales
+  (afecta a todas las obras futuras).
 
 Para probarlo sin cargar todo a mano:
 
