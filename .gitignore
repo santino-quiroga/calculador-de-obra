@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+
+# Datos del usuario: nunca se versionan
+datos/*.db
+datos/*.db-journal
+datos/backups/*
+
+# Mantener las carpetas en git aunque estén vacías
+!datos/backups/.gitkeep
+
+*.log
+.env*.local
