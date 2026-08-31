@@ -347,8 +347,21 @@ Se desarrolla **una fase por sesión**. No empezar la siguiente sin aprobación 
 
 > Claude Code actualiza esta sección al terminar cada fase.
 
-- **Fase actual:** 0 — en curso
-- **Fases cerradas:** ninguna
+- **Fase actual:** 2 — en curso
+- **Fases cerradas:** 0 (esqueleto), 1 (bases maestras)
+- **Qué quedó funcionando en la Fase 1:**
+  - ABM de insumos (materiales, mano de obra, equipos) con historial de precios:
+    actualizar un precio siempre inserta una fila nueva, nunca pisa la anterior.
+  - Actualización de precios en lote (varios insumos + % + fecha, en una operación).
+  - Importación de listas de proveedor en `.xlsx`, con mapeo de columnas y vista
+    previa antes de confirmar.
+  - ABM de rubros (se le agregó `activo` al esquema para borrado lógico) y de
+    conceptos de cargas sociales.
+  - Parámetros generales de empresa (gastos generales, beneficio, IVA, IIBB,
+    sellado, financieros, seguros).
+  - Función pura `obtenerPrecioVigente` en `lib/calculo/precios.ts` (con tests),
+    que la Fase 2 reutiliza para resolver precios contra la fecha base de la obra.
+  - Datos de ejemplo en `seed/` (10 rubros, 25 insumos típicos de obra argentina).
 - **Decisiones tomadas en el arranque (Fase 0):**
   - Impuestos sobre facturación (IIBB, sellado): se suman directo, no se despejan
     dividiendo (sección 6.2).
