@@ -15,3 +15,10 @@ export function formatearFecha(fechaISO: string) {
 export function hoyISO() {
   return new Date().toISOString().slice(0, 10);
 }
+
+export function sumarDias(fechaISO: string, dias: number): string {
+  const [anio, mes, dia] = fechaISO.split("-").map(Number);
+  const fecha = new Date(Date.UTC(anio, mes - 1, dia));
+  fecha.setUTCDate(fecha.getUTCDate() + dias);
+  return fecha.toISOString().slice(0, 10);
+}

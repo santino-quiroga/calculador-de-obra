@@ -347,10 +347,59 @@ Se desarrolla **una fase por sesión**. No empezar la siguiente sin aprobación 
 
 > Claude Code actualiza esta sección al terminar cada fase.
 
-- **Fase actual:** 6 — sin arrancar
+- **Fase actual:** 7 — sin arrancar
 - **Fases cerradas:** 0 (esqueleto), 1 (bases maestras), 2 (catálogo y motor
   de cálculo), 3 (obras y presupuesto), 4 (resumen de empresa), 5 (ítem
-  manual, guardado en catálogo y snapshot)
+  manual, guardado en catálogo y snapshot), 6 (plan de trabajos y curva
+  teórica)
+- **Qué quedó funcionando en la Fase 6:**
+  - Plan de trabajos (`/plan-trabajos`) con un Gantt propio en SVG/CSS
+    (`components/plan-trabajos/gantt-chart.tsx`) — sin librerías de
+    terceros, tal como pide CLAUDE.md sección 3. Cada rubro del presupuesto
+    es una fila con su barra; arrastrando el cuerpo se mueve, arrastrando
+    los bordes se estira. No hay drag/resize de terceros: son mouse events
+    nativos (mousedown/mousemove/mouseup en `window`).
+  - "Generar / completar plan": crea una tarea de 30 días por cada rubro que
+    todavía no tenga una, una atrás de la otra a partir de una fecha que
+    elige el usuario. Es idempotente — llamarlo de nuevo (por ejemplo si se
+    agrega un rubro al presupuesto más adelante) solo completa lo que falta,
+    sin tocar lo ya planificado (`generarPlanInicial`,
+    `lib/acciones/plan-trabajos.ts`).
+  - Desplegar un rubro muestra sus ítems, cada uno con un botón
+    "+ Planificar ítem" para darle su propia barra. La barra del rubro
+    representa siempre "subtotal del rubro menos lo ya desagregado a nivel
+    ítem" (`montoNetoRubro`, `lib/calculo/curva-inversion.ts`, con test) —
+    así el total nunca se duplica ni se pierde sin importar cuánto se
+    desagregue. Probado a mano: al planificar el único ítem de un rubro, la
+    barra del rubro pasó a $0,00 sola.
+  - Panel lateral por tarea (`components/plan-trabajos/tarea-sheet.tsx`)
+    para editar fechas a mano y elegir cómo se reparte el monto en el
+    tiempo: lineal (proporcional a los días en cada período), campana
+    (peso `sin(pi·t)` sobre la duración, pico en el medio) o manual (%
+    por período cargado a mano, validado que sume 100%). Estas dos
+    fórmulas de reparto no estaban cerradas en CLAUDE.md 6.4 — se
+    definieron en esta fase (`lib/calculo/curva-inversion.ts`, con tests).
+  - Curva de inversión teórica acumulada (Recharts, mismo patrón que la
+    torta de la Fase 4) y tabla de certificación proyectada mes a mes
+    (o semana a semana) debajo del Gantt, con el mismo cálculo puro
+    (`calcularCurvaTeorica`).
+  - Escala mensual por defecto, con toggle a semanal — la semana es "Sem N"
+    contada desde el inicio del rango visible del Gantt (no semana ISO,
+    para no complicar la lectura); la curva de abajo sí usa semana ISO real
+    (`YYYY-Www`) para los períodos, son ejes independientes.
+  - **Bug encontrado y corregido durante la prueba en navegador:** al
+    arrastrar una barra, React tiraba "Cannot update a component (Router)
+    while rendering a different component (GanttChart)" y el movimiento no
+    se guardaba. Causa: se llamaba a los callbacks `onMoverTarea`/
+    `onClickTarea` (que terminan en `router.refresh()`) desde *adentro* del
+    updater de `setArrastre(prev => ...)` — no está permitido tener efectos
+    secundarios ahí. Se corrigió sacando esos llamados afuera del updater y
+    usando un `ref` (no el estado `overrides`, que quedaba con un valor
+    viejo por el cierre del efecto) para leer la posición final del
+    arrastre al soltar el mouse.
+  - No se agregó ninguna fecha de inicio/fin a la tabla `obra` — el plan de
+    trabajos no la necesita, alcanza con pedir la fecha una vez al generar
+    las primeras tareas.
 - **Qué quedó funcionando en la Fase 5:**
   - "Ítem nuevo" en el presupuesto (`components/obras/agregar-item-dialog.tsx`,
     pestañas "Del catálogo" / "Ítem nuevo"): elegís rubro de tu lista
