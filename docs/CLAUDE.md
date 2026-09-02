@@ -347,9 +347,63 @@ Se desarrolla **una fase por sesión**. No empezar la siguiente sin aprobación 
 
 > Claude Code actualiza esta sección al terminar cada fase.
 
-- **Fase actual:** 5 — sin arrancar
+- **Fase actual:** 6 — sin arrancar
 - **Fases cerradas:** 0 (esqueleto), 1 (bases maestras), 2 (catálogo y motor
-  de cálculo), 3 (obras y presupuesto), 4 (resumen de empresa)
+  de cálculo), 3 (obras y presupuesto), 4 (resumen de empresa), 5 (ítem
+  manual, guardado en catálogo y snapshot)
+- **Qué quedó funcionando en la Fase 5:**
+  - "Ítem nuevo" en el presupuesto (`components/obras/agregar-item-dialog.tsx`,
+    pestañas "Del catálogo" / "Ítem nuevo"): elegís rubro de tu lista
+    existente (no texto libre — así no se rompe la agrupación por rubro del
+    resumen y el futuro Gantt), escribís descripción y unidad, y cargás
+    cantidad. Se crea la línea del presupuesto sin ítem de catálogo detrás
+    (`agregarItemManualPresupuesto`, `lib/acciones/presupuesto.ts`).
+  - Receta "suelta" por obra: mientras no la guardás en el catálogo, los
+    materiales/mano de obra/equipos que cargás en el panel lateral
+    (`components/obras/presupuesto-apu-sheet.tsx`, modo editable) viven en
+    una tabla nueva, `componente_presupuesto_item` — no tocan tu catálogo
+    maestro hasta que decidís lo contrario. El cálculo reutiliza el mismo
+    motor de la Fase 2 (`calcularApuDesdeComponentes`, extraído de
+    `calcularApuDeItem` en `lib/acciones/catalogo.ts` para poder alimentarlo
+    también desde esta tabla nueva).
+  - Botón "Guardar en catálogo": crea el ítem de catálogo (`origen='usuario'`)
+    con la receta cargada y engancha la línea del presupuesto a ese ítem
+    nuevo — de ahí en más se comporta como cualquier ítem de catálogo, en
+    esta obra y en las que vengan (`promoverItemManualACatalogo`).
+  - Aviso de ítem parecido antes de guardar: compara tu descripción
+    (`lib/calculo/similitud.ts`, con tests) contra los ítems de catálogo del
+    mismo rubro, ignorando tildes/mayúsculas/espacios de más. Si encuentra
+    coincidencia te deja elegir "Usar este" (engancha tu línea al ítem
+    existente y descarta la receta suelta, `usarItemCatalogoExistente`) o
+    guardar igual como nuevo. Probado a mano con "Mampostería de ladrillo
+    hueco 12 cm" repetido a propósito: lo detectó y "Usar este" funcionó.
+  - Snapshot al marcar una obra como "Presentada" (`presentarObra`,
+    `lib/acciones/obras.ts` ya no hace el cambio de estado sola — el botón
+    de la pantalla de presupuesto llama a `presentarObra` cuando el estado
+    elegido es "presentado"): recorre cada línea del presupuesto, calcula su
+    APU a la fecha base vigente en ese momento (para ítems de catálogo o
+    manuales, con o sin snapshot previo) y lo congela en `apu_snapshot`
+    (línea por línea, con el precio unitario final). Si la obra se vuelve a
+    presentar más adelante, se regenera con los valores de ese momento.
+  - Una vez que una línea tiene snapshot, `listarPresupuesto` siempre
+    muestra esos valores congelados (badge "Congelado" en la grilla y en el
+    panel lateral) — cambiar el catálogo o actualizar precios después no la
+    altera, sin importar si la obra vuelve a estado "Borrador". Probado a
+    mano: presenté la obra de ejemplo, los dos ítems quedaron marcados
+    "Congelado" con el desglose completo visible en modo solo-lectura
+    ("Presentado el [fecha]").
+  - Verificado a mano el flujo completo en `/obras/1` ("Casa de prueba"):
+    ítem nuevo → carga de un material → "Guardar en catálogo" (sin
+    parecidos, rubro nuevo) → presentar obra → congelado. Y por separado,
+    con un segundo ítem manual duplicado a propósito en el rubro
+    Mampostería: el aviso de parecido apareció y "Usar este" enganchó
+    correctamente al ítem existente.
+- **Decisión tomada en la Fase 5:** el pedido original decía "escribir
+  libremente rubro" para el ítem nuevo; se implementó con el selector de
+  rubro existente en vez de texto libre, porque el modelo de datos usa
+  `rubro_id` como FK (necesario para que las incidencias por rubro y, más
+  adelante, el Gantt agrupado por rubro sigan funcionando). Si falta un
+  rubro se agrega una vez en Bases maestras.
 - **Qué quedó funcionando en la Fase 4:**
   - Hoja de resumen de empresa (`/resumen-empresa`,
     `lib/acciones/resumen-empresa.ts`) que consolida el presupuesto de una

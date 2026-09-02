@@ -23,6 +23,7 @@ import { calcularCostoApu, type ComponenteApuInput } from "@/lib/calculo/apu";
 import { calcularFactorCargasSociales } from "@/lib/calculo/cargas-sociales";
 import { calcularCoeficienteResumen } from "@/lib/calculo/coeficiente-resumen";
 import { hoyISO } from "@/lib/formato";
+import { esquemaComponente, normalizarComponente } from "./componente-apu-comun";
 
 const RUTA = "/catalogo";
 
@@ -99,48 +100,6 @@ export async function cambiarActivoItemCatalogo(id: number, activo: boolean) {
   revalidatePath(RUTA);
 }
 
-const esquemaComponenteMaterial = z.object({
-  tipo: z.literal("material"),
-  insumoId: z.number().int().positive(),
-  cantidadUnitaria: z.number().positive("La cantidad tiene que ser mayor a cero"),
-  desperdicioPct: z.number().min(0, "El desperdicio no puede ser negativo"),
-  observacion: z.string().trim().optional(),
-});
-
-const esquemaComponenteConRendimiento = z.object({
-  tipo: z.enum(["mano_obra", "equipo"]),
-  insumoId: z.number().int().positive(),
-  rendimientoHoras: z.number().positive("El rendimiento tiene que ser mayor a cero"),
-  observacion: z.string().trim().optional(),
-});
-
-const esquemaComponente = z.discriminatedUnion("tipo", [
-  esquemaComponenteMaterial,
-  esquemaComponenteConRendimiento,
-]);
-
-function normalizarComponente(datos: z.infer<typeof esquemaComponente>) {
-  if (datos.tipo === "material") {
-    return {
-      tipo: datos.tipo,
-      insumoId: datos.insumoId,
-      cantidadUnitaria: datos.cantidadUnitaria,
-      desperdicioPct: datos.desperdicioPct,
-      rendimientoHoras: null,
-      observacion: datos.observacion ?? null,
-    };
-  }
-
-  return {
-    tipo: datos.tipo,
-    insumoId: datos.insumoId,
-    cantidadUnitaria: null,
-    desperdicioPct: null,
-    rendimientoHoras: datos.rendimientoHoras,
-    observacion: datos.observacion ?? null,
-  };
-}
-
 export async function agregarComponente(itemCatalogoId: number, datosCrudos: unknown) {
   const datos = esquemaComponente.parse(datosCrudos);
 
@@ -164,12 +123,20 @@ export async function eliminarComponente(id: number) {
   revalidatePath(RUTA);
 }
 
-export async function calcularApuDeItem(itemCatalogoId: number, fecha: string) {
-  const componentesDb = await db
-    .select()
-    .from(componenteApu)
-    .where(eq(componenteApu.itemCatalogoId, itemCatalogoId));
+// Recibe componentes ya traídos de la DB (de item_catalogo o, en la Fase 5,
+// de un ítem manual del presupuesto) y hace el resto: traer insumos,
+// historial de precios, cargas sociales y el coeficiente resumen. Separado
+// de calcularApuDeItem para que Fase 5 lo reutilice con otra tabla de origen.
+interface ComponenteDbGenerico {
+  id: number;
+  insumoId: number;
+  tipo: "material" | "mano_obra" | "equipo";
+  cantidadUnitaria: number | null;
+  desperdicioPct: number | null;
+  rendimientoHoras: number | null;
+}
 
+export async function calcularApuDesdeComponentes(componentesDb: ComponenteDbGenerico[], fecha: string) {
   const insumoIds = [...new Set(componentesDb.map((c) => c.insumoId))];
 
   const [insumosDb, preciosDb, conceptosDb, parametrosDb] = await Promise.all([
@@ -243,4 +210,13 @@ export async function calcularApuDeItem(itemCatalogoId: number, fecha: string) {
     coeficiente,
     errorParametros: null,
   };
+}
+
+export async function calcularApuDeItem(itemCatalogoId: number, fecha: string) {
+  const componentesDb = await db
+    .select()
+    .from(componenteApu)
+    .where(eq(componenteApu.itemCatalogoId, itemCatalogoId));
+
+  return calcularApuDesdeComponentes(componentesDb, fecha);
 }

@@ -5,15 +5,22 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Fragment } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { listarItemsCatalogo } from "@/lib/acciones/catalogo";
+import type { listarInsumos } from "@/lib/acciones/insumos";
 import { cambiarEstadoObra, editarObra } from "@/lib/acciones/obras";
 import type { listarPresupuesto } from "@/lib/acciones/presupuesto";
-import { editarCantidadPresupuesto, eliminarItemPresupuesto, reordenarItemsDeRubro } from "@/lib/acciones/presupuesto";
+import {
+  editarCantidadPresupuesto,
+  eliminarItemPresupuesto,
+  presentarObra,
+  reordenarItemsDeRubro,
+} from "@/lib/acciones/presupuesto";
 import type { listarRubros } from "@/lib/acciones/rubros";
 import { formatearFecha, formatearMoneda } from "@/lib/formato";
 import { AgregarItemDialog } from "./agregar-item-dialog";
@@ -24,6 +31,8 @@ import { PresupuestoApuSheet } from "./presupuesto-apu-sheet";
 export type PresupuestoResultado = NonNullable<Awaited<ReturnType<typeof listarPresupuesto>>>;
 export type RubroParaPresupuesto = Awaited<ReturnType<typeof listarRubros>>[number];
 export type ItemCatalogoParaPresupuesto = Awaited<ReturnType<typeof listarItemsCatalogo>>[number];
+export type InsumoParaPresupuesto = Awaited<ReturnType<typeof listarInsumos>>[number];
+export type PresupuestoItemFila = PresupuestoResultado["rubros"][number]["items"][number];
 
 const ETIQUETAS_ESTADO: Record<string, string> = {
   borrador: "Borrador",
@@ -36,10 +45,12 @@ export function PresupuestoClient({
   presupuestoInicial,
   rubros,
   itemsCatalogo,
+  insumos,
 }: {
   presupuestoInicial: PresupuestoResultado;
   rubros: RubroParaPresupuesto[];
   itemsCatalogo: ItemCatalogoParaPresupuesto[];
+  insumos: InsumoParaPresupuesto[];
 }) {
   const router = useRouter();
   const [presupuesto, setPresupuesto] = useState(presupuestoInicial);
@@ -49,7 +60,7 @@ export function PresupuestoClient({
 
   const [dialogoObraAbierto, setDialogoObraAbierto] = useState(false);
   const [dialogoAgregarAbierto, setDialogoAgregarAbierto] = useState(false);
-  const [apuAbierto, setApuAbierto] = useState<{ itemCatalogoId: number; descripcion: string } | null>(null);
+  const [itemApuAbierto, setItemApuAbierto] = useState<PresupuestoItemFila | null>(null);
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [cantidadesEnEdicion, setCantidadesEnEdicion] = useState<Record<number, string>>({});
 
@@ -77,8 +88,13 @@ export function PresupuestoClient({
 
   async function manejarCambiarEstado(nuevoEstado: string) {
     try {
-      await cambiarEstadoObra(obra.id, nuevoEstado as typeof obra.estado);
-      toast.success("Estado actualizado");
+      if (nuevoEstado === "presentado") {
+        await presentarObra(obra.id);
+        toast.success("Obra presentada — se congeló la composición de cada APU con los precios de hoy");
+      } else {
+        await cambiarEstadoObra(obra.id, nuevoEstado as typeof obra.estado);
+        toast.success("Estado actualizado");
+      }
       refrescar();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo cambiar el estado");
@@ -167,8 +183,8 @@ export function PresupuestoClient({
 
         {obra.estado === "presentado" && (
           <p className="max-w-sm text-xs text-neutral-500">
-            El congelado de precios al presentar todavía no está implementado — llega en la Fase 5. Por
-            ahora, este estado es solo informativo.
+            La composición y el precio de cada ítem quedaron congelados con los valores de cuando se
+            presentó. Cambiar el catálogo o los precios de ahora en más no los altera.
           </p>
         )}
 
@@ -224,15 +240,14 @@ export function PresupuestoClient({
                         <TableCell className="cursor-move text-neutral-400">⠿</TableCell>
                         <TableCell>{item.nroItem}</TableCell>
                         <TableCell>
-                          <button
-                            className="text-left hover:underline"
-                            onClick={() =>
-                              item.itemCatalogoId !== null &&
-                              setApuAbierto({ itemCatalogoId: item.itemCatalogoId, descripcion: item.descripcion })
-                            }
-                          >
+                          <button className="text-left hover:underline" onClick={() => setItemApuAbierto(item)}>
                             {item.descripcion}
                           </button>
+                          {item.congelado && (
+                            <Badge variant="outline" className="ml-2 align-middle">
+                              Congelado
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell>{item.unidad}</TableCell>
                         <TableCell>
@@ -288,10 +303,12 @@ export function PresupuestoClient({
       />
 
       <PresupuestoApuSheet
-        itemCatalogoId={apuAbierto?.itemCatalogoId ?? null}
-        descripcion={apuAbierto?.descripcion ?? null}
+        item={itemApuAbierto}
         fechaBasePrecios={obra.fechaBasePrecios}
-        onOpenChange={(abierto) => !abierto && setApuAbierto(null)}
+        insumos={insumos}
+        itemsCatalogo={itemsCatalogo}
+        onOpenChange={(abierto) => !abierto && setItemApuAbierto(null)}
+        onCambio={refrescar}
       />
     </div>
   );

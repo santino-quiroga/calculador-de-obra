@@ -133,6 +133,25 @@ export const presupuestoItem = sqliteTable("presupuesto_item", {
   orden: integer("orden").notNull().default(0),
 });
 
+// Receta "suelta" de un ítem manual del presupuesto, todavía sin promover
+// al catálogo (Fase 5). Mismos campos que componente_apu, pero colgada de
+// la línea del presupuesto en vez de un item_catalogo. Al guardar en
+// catálogo estas filas se copian a componente_apu y se borran de acá.
+export const componentePresupuestoItem = sqliteTable("componente_presupuesto_item", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  presupuestoItemId: integer("presupuesto_item_id")
+    .notNull()
+    .references(() => presupuestoItem.id),
+  insumoId: integer("insumo_id")
+    .notNull()
+    .references(() => insumo.id),
+  tipo: text("tipo", { enum: ["material", "mano_obra", "equipo"] }).notNull(),
+  cantidadUnitaria: real("cantidad_unitaria"),
+  desperdicioPct: real("desperdicio_pct"),
+  rendimientoHoras: real("rendimiento_horas"),
+  observacion: text("observacion"),
+});
+
 // Foto congelada al marcar una obra como "Presentada" (CLAUDE.md 4.3)
 export const apuSnapshot = sqliteTable("apu_snapshot", {
   id: integer("id").primaryKey({ autoIncrement: true }),
