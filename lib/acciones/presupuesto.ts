@@ -457,6 +457,39 @@ export async function obtenerSnapshotDeItem(presupuestoItemId: number) {
   };
 }
 
+// Para imprimir/exportar la APU de una línea del presupuesto (Fase 8): el
+// mismo criterio que listarPresupuesto — si ya tiene snapshot (obra
+// presentada), esos son los números que se muestran; si no, se resuelve en
+// vivo a la fecha base de la obra.
+export async function obtenerApuResueltoDePresupuestoItem(presupuestoItemId: number) {
+  const [item] = await db.select().from(presupuestoItem).where(eq(presupuestoItem.id, presupuestoItemId));
+  if (!item) return null;
+
+  const obraFila = await obtenerObra(item.obraId);
+  if (!obraFila) return null;
+
+  const rubroFila = (await db.select().from(rubro).where(eq(rubro.id, item.rubroId)))[0] ?? null;
+
+  const snapshot = await obtenerSnapshotDeItem(presupuestoItemId);
+  if (snapshot) {
+    return {
+      item,
+      rubro: rubroFila,
+      obra: obraFila,
+      calculo: snapshot.calculo,
+      fechaCalculo: snapshot.fechaSnapshot,
+      congelado: true,
+    };
+  }
+
+  const calculo =
+    item.itemCatalogoId !== null
+      ? await calcularApuDeItem(item.itemCatalogoId, obraFila.fechaBasePrecios)
+      : await calcularApuDeItemManual(item.id, obraFila.fechaBasePrecios);
+
+  return { item, rubro: rubroFila, obra: obraFila, calculo, fechaCalculo: obraFila.fechaBasePrecios, congelado: false };
+}
+
 export async function reordenarItemsDeRubro(obraId: number, rubroId: number, idsEnNuevoOrden: number[]) {
   for (let indice = 0; indice < idsEnNuevoOrden.length; indice++) {
     await db

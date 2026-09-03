@@ -148,9 +148,19 @@ export function PresupuestoClient({
             {obra.comitente ?? "Sin comitente"} · {obra.ubicacion ?? "Sin ubicación"}
           </p>
         </div>
-        <Button variant="outline" onClick={() => setDialogoObraAbierto(true)}>
-          Editar obra
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <a href={`/imprimir/presupuesto/${obra.id}`} target="_blank" rel="noreferrer">
+              Imprimir presupuesto
+            </a>
+          </Button>
+          <Button variant="outline" asChild>
+            <a href={`/api/exportar/${obra.id}`}>Exportar a Excel</a>
+          </Button>
+          <Button variant="outline" onClick={() => setDialogoObraAbierto(true)}>
+            Editar obra
+          </Button>
+        </div>
       </div>
 
       <div className="mt-4 flex flex-wrap items-end gap-4 rounded-md border p-4">

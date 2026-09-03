@@ -1,11 +1,9 @@
-import { PaginaPlaceholder } from "@/components/pagina-placeholder";
+import { listarObras } from "@/lib/acciones/obras";
+import { CertificadosClient } from "@/components/certificados/certificados-client";
 
-export default function Certificados() {
-  return (
-    <PaginaPlaceholder
-      titulo="Certificados"
-      fase={8}
-      descripcion="Acá vas a emitir certificados mensuales con anticipo y fondo de reparo, y exportar presupuesto, APUs, plan de trabajos y certificados a Excel y PDF."
-    />
-  );
+export const dynamic = "force-dynamic";
+
+export default async function Certificados() {
+  const obras = await listarObras();
+  return <CertificadosClient obras={obras} />;
 }

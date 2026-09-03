@@ -81,6 +81,13 @@ export const parametrosEmpresa = sqliteTable("parametros_empresa", {
   selladoPct: real("sellado_pct").notNull(),
   gastosFinancierosPct: real("gastos_financieros_pct").notNull(),
   segurosPct: real("seguros_pct").notNull(),
+  // Datos de carátula (Fase 8): encabezan las exportaciones e impresiones.
+  // No estaban previstos en el modelo de datos original — hasta esta fase
+  // no había ninguna pantalla que los necesitara.
+  razonSocial: text("razon_social"),
+  cuit: text("cuit"),
+  direccion: text("direccion"),
+  matricula: text("matricula"),
 });
 
 // Desglose de cargas sociales por concepto (decisión Fase 0). Reemplaza a un

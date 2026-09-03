@@ -153,6 +153,17 @@ export function PresupuestoApuSheet({
           </SheetDescription>
         </SheetHeader>
 
+        {item && (
+          <a
+            className="mt-2 inline-block text-xs text-blue-600 hover:underline"
+            href={`/imprimir/apu/${item.id}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Imprimir esta APU
+          </a>
+        )}
+
         {cargando && <p className="mt-4 text-sm text-neutral-500">Calculando...</p>}
 
         {/* Congelado */}

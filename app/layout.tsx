@@ -12,9 +12,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es">
       <body className="flex min-h-screen bg-white text-neutral-900 antialiased">
-        <NavSidebar />
+        <div className="no-imprimir">
+          <NavSidebar />
+        </div>
         <main className="flex-1 p-8">{children}</main>
-        <Toaster position="bottom-right" />
+        <div className="no-imprimir">
+          <Toaster position="bottom-right" />
+        </div>
       </body>
     </html>
   );

@@ -139,6 +139,7 @@ componente_apu                     -- líneas de la receta
 parametros_empresa                 -- valores por defecto, editables
   gastos_generales_pct, beneficio_pct,
   ingresos_brutos_pct, iva_pct, sellado_pct, gastos_financieros_pct, seguros_pct
+  razon_social, cuit, direccion, matricula   -- datos de carátula (Fase 8)
   -- cargas_sociales_pct NO vive acá: se calcula a partir de concepto_carga_social
 
 concepto_carga_social               -- desglose de cargas sociales, editable por concepto
@@ -352,11 +353,72 @@ Se desarrolla **una fase por sesión**. No empezar la siguiente sin aprobación 
 
 > Claude Code actualiza esta sección al terminar cada fase.
 
-- **Fase actual:** 8 — sin arrancar
+- **Fase actual:** 9 (opcional, redeterminación de precios) — sin arrancar
 - **Fases cerradas:** 0 (esqueleto), 1 (bases maestras), 2 (catálogo y motor
   de cálculo), 3 (obras y presupuesto), 4 (resumen de empresa), 5 (ítem
   manual, guardado en catálogo y snapshot), 6 (plan de trabajos y curva
-  teórica), 7 (control de obra, avances reales y desvíos)
+  teórica), 7 (control de obra, avances reales y desvíos), 8 (certificados
+  y exportación)
+- **Qué quedó funcionando en la Fase 8:**
+  - Certificados (`/certificados`, reemplaza el placeholder): no se carga
+    nada a mano. "Generar certificado" toma el mes elegido de una lista de
+    meses con avance real cargado en Control de obra (Fase 7) que todavía
+    no tienen certificado, y usa el monto de esa curva real como bruto del
+    período — es el mismo número que ya calculaba la Fase 7, sin ninguna
+    fórmula de costeo nueva (`lib/acciones/certificados.ts`).
+  - Descuento de anticipo financiero y fondo de reparo según los % de la
+    obra, acumulado bruto anterior/actual, numeración correlativa (nunca
+    reutiliza un número aunque se borre un borrador intermedio) y estados
+    borrador → emitido → aprobado, solo hacia adelante
+    (`lib/calculo/certificados.ts`, con tests). Un certificado solo se
+    puede borrar en borrador.
+  - Datos de carátula nuevos en Bases maestras → Parámetros de empresa
+    (razón social, CUIT, dirección, matrícula) — no estaban en el modelo de
+    datos original, se agregaron 4 columnas a `parametros_empresa` con
+    respaldo previo de la base.
+  - Impresión a PDF vía **print CSS**, no una librería nueva (decisión
+    tomada con el usuario: `@react-pdf/renderer` quedó descartado por
+    ahora). Tres pantallas de impresión, cada una con la misma carátula
+    (`components/impresion/caratula.tsx`) y un botón que llama a
+    `window.print()` (`components/impresion/boton-imprimir.tsx`):
+    - `/imprimir/presupuesto/[obraId]` — cómputo y presupuesto completo,
+      con el mismo formato jerárquico rubro/ítem de
+      `docs/formato-apu/Planilla de computo y presupuesto.pdf`.
+    - `/imprimir/apu/[itemId]` — análisis de precio unitario de una línea
+      del presupuesto, replicando el formato de
+      `docs/formato-apu/Planilla de analisis de precio .jpg` (materiales,
+      mano de obra con cargas sociales desagregadas aparte, equipos,
+      combustibles y lubricantes en $0 por la decisión de Fase 0, costo
+      directo, cascada del coeficiente resumen). Usa
+      `obtenerApuResueltoDePresupuestoItem` (`lib/acciones/presupuesto.ts`,
+      nueva), que resuelve congelado-o-en-vivo con el mismo criterio que
+      `listarPresupuesto`.
+    - `/imprimir/certificado/[certificadoId]` — el certificado con
+      acumulados y renglones de firma para comitente y contratista.
+    - El sidebar y el toaster se esconden solo al imprimir (clase
+      `.no-imprimir` + `@media print` en `app/globals.css`), no en
+      pantalla — así se puede seguir navegando desde la misma página.
+  - Exportación a Excel con ExcelJS (`lib/exportacion/excel.ts` +
+    `app/api/exportar/[obraId]/route.ts`, botón "Exportar a Excel" en
+    Obras y presupuesto): un libro por obra con 4 hojas — Presupuesto,
+    APUs (todas seguidas, una por ítem), Plan de trabajos (grilla rubro ×
+    mes con el monto de cada uno, reutilizando `construirTareasDelPlan` +
+    `calcularCurvaTeorica`) y Curva de inversión (tabla de período/monto/
+    acumulado). ExcelJS no genera gráficos nativos de Excel: la curva va
+    como tabla de datos, no como imagen — el usuario la grafica con un
+    clic si quiere el dibujo.
+  - Probado a mano de punta a punta en `/obras/1` ("Casa de prueba"):
+    imprimir presupuesto y una APU (verificado que el precio final de la
+    APU impresa, $41.881,06, coincide centavo a centavo con el precio
+    unitario del presupuesto), generar el certificado de 2026-09 (bruto
+    $837.621,19 — el mismo monto que ya mostraba Control de obra),
+    avanzarlo a "Emitido", imprimirlo, y descargar el Excel (verificado
+    que las 4 hojas traen los números correctos y consistentes entre sí).
+- **Decisión tomada en la Fase 8:** el pedido original preveía "@react-pdf/
+  renderer o print CSS" para el PDF; se eligió print CSS porque no agrega
+  dependencias y encaja con una app 100% local. Si más adelante hace falta
+  un botón de "Descargar PDF" sin pasar por el diálogo de impresión del
+  navegador, hay que instalar `@react-pdf/renderer`.
 - **Qué quedó funcionando en la Fase 7:**
   - Control de obra (`/control-obra`, reemplaza el placeholder): un
     selector de obra y, debajo, el mismo plan de la Fase 6 pero con dos

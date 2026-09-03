@@ -17,6 +17,10 @@ const esquemaParametros = z.object({
   selladoPct: z.number(),
   gastosFinancierosPct: z.number(),
   segurosPct: z.number(),
+  razonSocial: z.string().trim().optional(),
+  cuit: z.string().trim().optional(),
+  direccion: z.string().trim().optional(),
+  matricula: z.string().trim().optional(),
 });
 
 // Es una sola fila de configuración general (no hay ABM: se edita in situ).

@@ -35,3 +35,18 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Páginas de impresión (Fase 8): esconde la navegación y cualquier control
+   marcado .no-imprimir, y le saca el padding de pantalla al contenido para
+   que la hoja impresa/PDF use toda la página. */
+@media print {
+  .no-imprimir {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  body {
+    background: white;
+  }
+}

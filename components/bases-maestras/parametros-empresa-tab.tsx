@@ -20,6 +20,13 @@ const CAMPOS: { clave: keyof CamposFormulario; etiqueta: string }[] = [
   { clave: "selladoPct", etiqueta: "Sellado (%)" },
 ];
 
+const CAMPOS_CARATULA: { clave: keyof CamposCaratula; etiqueta: string }[] = [
+  { clave: "razonSocial", etiqueta: "Razón social / estudio" },
+  { clave: "cuit", etiqueta: "CUIT" },
+  { clave: "direccion", etiqueta: "Dirección" },
+  { clave: "matricula", etiqueta: "Matrícula" },
+];
+
 type CamposFormulario = {
   gastosGeneralesPct: string;
   beneficioPct: string;
@@ -28,6 +35,13 @@ type CamposFormulario = {
   selladoPct: string;
   gastosFinancierosPct: string;
   segurosPct: string;
+};
+
+type CamposCaratula = {
+  razonSocial: string;
+  cuit: string;
+  direccion: string;
+  matricula: string;
 };
 
 function valoresIniciales(parametros: ParametrosEmpresaFila): CamposFormulario {
@@ -42,6 +56,15 @@ function valoresIniciales(parametros: ParametrosEmpresaFila): CamposFormulario {
   };
 }
 
+function valoresInicialesCaratula(parametros: ParametrosEmpresaFila): CamposCaratula {
+  return {
+    razonSocial: parametros?.razonSocial ?? "",
+    cuit: parametros?.cuit ?? "",
+    direccion: parametros?.direccion ?? "",
+    matricula: parametros?.matricula ?? "",
+  };
+}
+
 export function ParametrosEmpresaTab({
   parametrosIniciales,
 }: {
@@ -49,10 +72,12 @@ export function ParametrosEmpresaTab({
 }) {
   const router = useRouter();
   const [valores, setValores] = useState<CamposFormulario>(() => valoresIniciales(parametrosIniciales));
+  const [caratula, setCaratula] = useState<CamposCaratula>(() => valoresInicialesCaratula(parametrosIniciales));
   const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
     setValores(valoresIniciales(parametrosIniciales));
+    setCaratula(valoresInicialesCaratula(parametrosIniciales));
   }, [parametrosIniciales]);
 
   async function manejarSubmit(evento: React.FormEvent) {
@@ -68,6 +93,7 @@ export function ParametrosEmpresaTab({
         selladoPct: Number(valores.selladoPct),
         gastosFinancierosPct: Number(valores.gastosFinancierosPct),
         segurosPct: Number(valores.segurosPct),
+        ...caratula,
       });
       toast.success("Parámetros de empresa guardados");
       router.refresh();
@@ -96,6 +122,23 @@ export function ParametrosEmpresaTab({
               required
               value={valores[clave]}
               onChange={(e) => setValores((anterior) => ({ ...anterior, [clave]: e.target.value }))}
+            />
+          </div>
+        ))}
+      </div>
+
+      <p className="mb-4 mt-8 text-sm text-neutral-500">
+        Datos para la carátula de las exportaciones e impresiones (presupuesto, APUs y
+        certificados).
+      </p>
+      <div className="grid grid-cols-2 gap-4">
+        {CAMPOS_CARATULA.map(({ clave, etiqueta }) => (
+          <div key={clave} className="grid gap-1.5">
+            <Label htmlFor={clave}>{etiqueta}</Label>
+            <Input
+              id={clave}
+              value={caratula[clave]}
+              onChange={(e) => setCaratula((anterior) => ({ ...anterior, [clave]: e.target.value }))}
             />
           </div>
         ))}
