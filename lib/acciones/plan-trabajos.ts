@@ -15,13 +15,12 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db/client";
 import { planTarea } from "@/lib/db/schema";
 import { listarPresupuesto } from "@/lib/acciones/presupuesto";
+import { construirTareasDelPlan } from "@/lib/acciones/plan-trabajos-helpers";
 import {
   calcularCurvaTeorica,
   montoNetoRubro,
   validarDistribucionManual,
   type Granularidad,
-  type TareaParaCurva,
-  type TipoCurva,
 } from "@/lib/calculo/curva-inversion";
 import { sumarDias } from "@/lib/formato";
 
@@ -62,6 +61,8 @@ export async function listarPlanDeTrabajos(obraId: number) {
       nroItem: item.nroItem,
       descripcion: item.descripcion,
       unidad: item.unidad,
+      cantidad: item.cantidad,
+      precioUnitario: item.precioUnitario,
       precioTotal: item.precioTotal,
       tarea: tareaItemPorId.get(item.id) ?? null,
     }));
@@ -214,33 +215,8 @@ export async function calcularCurvaTeoricaDeObra(obraId: number, granularidad: G
   const plan = await listarPlanDeTrabajos(obraId);
   if (!plan) return null;
 
-  const tareas: TareaParaCurva[] = [];
-  for (const rubro of plan.rubros) {
-    for (const item of rubro.items) {
-      if (!item.tarea) continue;
-      tareas.push({
-        id: item.tarea.id,
-        fechaInicio: item.tarea.fechaInicio,
-        fechaFin: item.tarea.fechaFin,
-        monto: item.precioTotal,
-        curva: item.tarea.curva as TipoCurva,
-        distribucionManual: item.tarea.distribucionManual,
-      });
-    }
-    if (rubro.tarea) {
-      tareas.push({
-        id: rubro.tarea.id,
-        fechaInicio: rubro.tarea.fechaInicio,
-        fechaFin: rubro.tarea.fechaFin,
-        monto: rubro.montoNeto,
-        curva: rubro.tarea.curva as TipoCurva,
-        distribucionManual: rubro.tarea.distribucionManual,
-      });
-    }
-  }
-
   return {
-    curva: calcularCurvaTeorica(tareas, granularidad),
+    curva: calcularCurvaTeorica(construirTareasDelPlan(plan), granularidad),
     totalPresupuesto: plan.totalPresupuesto,
   };
 }

@@ -194,6 +194,27 @@ export const avanceReal = sqliteTable("avance_real", {
   observacion: text("observacion"),
 });
 
+// Panel de acciones correctivas (Fase 7): se genera automáticamente una fila
+// por cada rubro que cae en semáforo rojo (ver lib/calculo/valor-ganado.ts).
+// No estaba en el modelo de datos original de CLAUDE.md sección 5 — se
+// agregó en esta fase porque hasta ahora no existía la pantalla que la necesita.
+export const accionCorrectiva = sqliteTable("accion_correctiva", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  obraId: integer("obra_id")
+    .notNull()
+    .references(() => obra.id),
+  rubroId: integer("rubro_id")
+    .notNull()
+    .references(() => rubro.id),
+  periodo: text("periodo").notNull(), // período de corte que generó el desvío, 'YYYY-MM'
+  desvioPesos: real("desvio_pesos").notNull(),
+  desvioDias: real("desvio_dias").notNull(),
+  accionDecidida: text("accion_decidida"),
+  responsable: text("responsable"),
+  fechaRevision: text("fecha_revision"),
+  creadoEn: text("creado_en").notNull(),
+});
+
 export const certificado = sqliteTable("certificado", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   obraId: integer("obra_id")

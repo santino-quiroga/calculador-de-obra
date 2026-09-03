@@ -187,6 +187,11 @@ avance_real
 certificado
   id, obra_id, numero, periodo, estado,
   monto_bruto, desc_anticipo, desc_fondo_reparo, monto_neto
+
+accion_correctiva                  -- agregada en Fase 7, no estaba prevista acá
+  id, obra_id, rubro_id, periodo,  -- período de corte que generó el desvío
+  desvio_pesos, desvio_dias,
+  accion_decidida, responsable, fecha_revision, creado_en
 ```
 
 ---
@@ -347,11 +352,74 @@ Se desarrolla **una fase por sesión**. No empezar la siguiente sin aprobación 
 
 > Claude Code actualiza esta sección al terminar cada fase.
 
-- **Fase actual:** 7 — sin arrancar
+- **Fase actual:** 8 — sin arrancar
 - **Fases cerradas:** 0 (esqueleto), 1 (bases maestras), 2 (catálogo y motor
   de cálculo), 3 (obras y presupuesto), 4 (resumen de empresa), 5 (ítem
   manual, guardado en catálogo y snapshot), 6 (plan de trabajos y curva
-  teórica)
+  teórica), 7 (control de obra, avances reales y desvíos)
+- **Qué quedó funcionando en la Fase 7:**
+  - Control de obra (`/control-obra`, reemplaza el placeholder): un
+    selector de obra y, debajo, el mismo plan de la Fase 6 pero con dos
+    barras por tarea (`components/control-obra/gantt-control.tsx`, de solo
+    lectura): la de contrato (gris) y, superpuesta y más angosta, la
+    ejecutada, coloreada según el semáforo del rubro. El % ejecutado de una
+    barra es la suma de sus avances mensuales cargados.
+  - El avance siempre se carga en mes calendario (`avance_real.periodo`,
+    'YYYY-MM'), sea cual sea la escala mensual/semanal que se esté mirando
+    en Plan de trabajos — es independiente de esa vista. Un avance es "lo
+    que se hizo ese mes", no un acumulado: el sistema va sumando mes a mes.
+  - Ficha de carga de avance por tarea (`components/control-obra/avance-sheet.tsx`,
+    botón "Cargar avance" en cada fila del Gantt): si la barra es de un
+    ítem del presupuesto, cargás cantidad ejecutada en su unidad o el
+    porcentaje y el sistema calcula el otro (con vista previa en vivo,
+    `cargarAvancePeriodo` en `lib/acciones/control-obra.ts`); si la barra
+    es de un rubro completo (agrupa ítems de distinta unidad, no tiene una
+    cantidad física única), solo se carga el porcentaje. Debajo, la lista
+    de meses ya cargados con opción de borrar cada uno.
+  - Curva real acumulada superpuesta a la teórica en el mismo gráfico
+    (`components/control-obra/curva-comparada-chart.tsx`), cortada sola al
+    último mes con datos — no hace falta ninguna lógica para el corte:
+    `calcularCurvaReal` (`lib/calculo/valor-ganado.ts`) solo emite los
+    períodos que tienen avance, y el gráfico no dibuja el tramo sin datos.
+  - Valor ganado según CLAUDE.md 6.5, con dos decisiones que no estaban
+    cerradas ahí: el "período de corte" (donde se miden PV/EV/SPI/SV) es el
+    último mes con algún avance cargado en la obra; y el desvío en días se
+    calcula buscando en la curva teórica en qué fecha se iba a alcanzar el
+    mismo monto acumulado que el EV real (interpolando dentro del mes) y
+    comparando con la fecha de corte real — positivo es atraso
+    (`calcularDesviosPorRubro`, con tests). Se calcula por rubro, agrupando
+    tanto la barra del rubro como las de sus ítems desagregados.
+  - Semáforo por rubro (`components/control-obra/semaforo-rubros-table.tsx`)
+    con el mismo corte de CLAUDE.md 6.5 (SPI ≥ 0,95 verde, 0,85–0,95
+    amarillo, menos rojo). Un rubro sin PV todavía (su tarea arranca después
+    del corte) se muestra verde — no hay con qué compararlo todavía.
+  - Panel de acciones correctivas (`components/control-obra/acciones-correctivas-panel.tsx`):
+    cada rubro que cae en rojo genera y actualiza sola su fila (tabla nueva
+    `accion_correctiva`, no estaba en el modelo de datos original — ver
+    sección 5) con el desvío en $ y en días; el arquitecto completa acción
+    decidida, responsable y fecha de revisión (`guardarAccionCorrectiva`,
+    upsert por obra+rubro para no depender de que la fila automática ya
+    exista). Si un rubro deja de estar en rojo, su fila se saca de la lista
+    de pendientes pero **no se borra** si ya tiene algo escrito — se
+    recupera sola si el rubro vuelve a atrasarse (CLAUDE.md 4.5: los datos
+    son sagrados). Probado a mano: cargado un avance atrasado, apareció la
+    fila roja; completada la acción y guardada; borrado el avance para
+    simular que nunca se había cargado, la fila con el texto ya escrito
+    volvió a aparecer sola.
+  - Motor puro en `lib/calculo/valor-ganado.ts` (10 tests): `calcularSemaforo`,
+    `calcularCurvaReal` y `calcularDesviosPorRubro`.
+  - Se extrajo `construirTareasDelPlan` de `lib/acciones/plan-trabajos.ts` a
+    `lib/acciones/plan-trabajos-helpers.ts` (sin `"use server"`) para poder
+    reutilizarla desde control de obra — Next.js exige que todo lo
+    exportado de un archivo `"use server"` sea `async`, y esta es una
+    función pura.
+  - Probado a mano en `/obras/1` ("Casa de prueba"): cargado un avance de
+    septiembre en el ítem de mampostería (20 de 25 m², 80%), el rubro dio
+    atrasado (SPI 0,80, `-$209.405,30`, `+6` días) porque su tarea ya había
+    terminado a la fecha de corte; cargado un segundo mes con el resto
+    (100%), volvió a "Al día" (SPI 1,00) y la curva real quedó pegada a la
+    teórica hasta ese mes. Los datos sobrevivieron a un reinicio del
+    servidor.
 - **Qué quedó funcionando en la Fase 6:**
   - Plan de trabajos (`/plan-trabajos`) con un Gantt propio en SVG/CSS
     (`components/plan-trabajos/gantt-chart.tsx`) — sin librerías de
